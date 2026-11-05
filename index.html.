@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Play | Online Games</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101020;color:white;font-family:Arial,sans-serif}
+header{background:#191932;padding:18px 5%;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;border-bottom:1px solid #34345b}
+.logo{font-size:27px;font-weight:bold;color:#a78bfa}
+.logo span{color:#38bdf8}
+input{background:#252542;border:1px solid #454568;border-radius:10px;padding:13px;color:white;font-size:15px;width:min(340px,90vw)}
+.hero{padding:55px 7%;background:linear-gradient(120deg,#30205d,#174b75)}
+.hero h1{font-size:clamp(32px,5vw,48px);margin:0 0 10px}
+.hero p{color:#ddd9f7}
+main{padding:25px 5%}
+.categories{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0}
+button{cursor:pointer}
+.categories button,.back{background:#252542;color:white;border:1px solid #454568;border-radius:20px;padding:10px 17px}
+.categories button.active,.categories button:hover{background:#7652d6}
+h2{margin-top:30px}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px}
+.game{background:#1c1c35;border:1px solid #34345b;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s}
+.game:hover{transform:translateY(-5px);border-color:#a78bfa}
+.thumb{height:125px;display:grid;place-items:center;font-size:55px;background:linear-gradient(135deg,#35205c,#174b75)}
+.info{padding:14px}
+.info h3{margin:0 0 7px}
+.info small{color:#aaa}
+.play{display:block;width:100%;background:#7652d6;border:0;color:white;padding:10px;border-radius:7px;margin-top:12px}
+#player{display:none;margin-top:25px;background:#1c1c35;padding:18px;border-radius:14px}
+#player iframe{width:100%;height:65vh;border:0;background:#080810;border-radius:9px}
+#player h2{margin-top:0}
+#localGame{background:#252542;padding:20px;border-radius:12px;text-align:center;min-height:220px}
+#localGame button{background:#7652d6;color:white;border:0;border-radius:8px;padding:12px;margin:5px}
+#localGame input{max-width:180px}
+footer{text-align:center;color:#888;padding:35px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">PIXEL <span>PLAY</span></div>
+ <input id="search" placeholder="Search games..." oninput="render()">
+</header>
+
+<section class="hero">
+ <h1>Find Your Next Game</h1>
+ <p>Play fun games, discover new favorites, and explore the Pixel Play arcade.</p>
+</section>
+
+<main>
+ <h2>Game Categories</h2>
+ <div class="categories" id="categories"></div>
+
+ <h2 id="sectionTitle">All Games</h2>
+ <div class="games" id="games"></div>
+
+ <section id="player">
+  <button class="back" onclick="closeGame()">← Back to games</button>
+  <h2 id="gameTitle"></h2>
+  <div id="gameArea">
+   <iframe id="frame" allow="fullscreen; autoplay; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </div>
+ </section>
+</main>
+
+<footer>PIXEL PLAY • Your online gaming arcade</footer>
+
+<script>
+const games=[
+ {name:"Snake Garden",category:"Arcade",emoji:"🐍",type:"local",id:"snake"},
+ {name:"Memory Match",category:"Puzzle",emoji:"🧠",type:"local",id:"memory"},
+ {name:"Tic Tac Toe",category:"Puzzle",emoji:"⭕",type:"local",id:"tic"},
+ {name:"Number Guess",category:"Puzzle",emoji:"🔢",type:"local",id:"guess"},
+ // Add games only from websites that allow embedding.
+ // Example:
+ // {name:"Example Game",category:"Racing",emoji:"🏎️",
+ //  type:"url",url:"https://example.com/game"}
+];
+
+const cats=["All","Arcade","Puzzle","Racing","Sports","Platformer"];
+let selected="All";
+
+function render(){
+ const query=document.getElementById("search").value.toLowerCase();
+ document.getElementById("categories").innerHTML=cats.map(c=>
+ `<button class="${selected===c?'active':''}" onclick="choose('${c}')">${c}</button>`
+ ).join("");
+
+ const filtered=games.filter(g=>
+ (selected==="All"||g.category===selected)&&g.name.toLowerCase().includes(query)
+ );
+ document.getElementById("sectionTitle").textContent=selected==="All"?"All Games":selected+" Games";
+ document.getElementById("games").innerHTML=filtered.map((g,i)=>`
+ <div class="game" onclick="openGame('${g.name.replace(/'/g,"\\'")}')">
+  <div class="thumb">${g.emoji}</div>
+  <div class="info">
+   <h3>${g.name}</h3>
+   <small>${g.category}</small>
+   <button class="play">PLAY NOW</button>
+  </div>
+ </div>`).join("")||"<p>No games found.</p>";
+}
+function choose(c){selected=c;render()}
+
+function openGame(name){
+ const game=games.find(g=>g.name===name);
+ if(!game)return;
+ document.getElementById("player").style.display="block";
+ document.getElementById("gameTitle").textContent=game.name;
+ document.getElementById("player").scrollIntoView({behavior:"smooth"});
+ const area=document.getElementById("gameArea");
+ const frame=document.getElementById("frame");
+ if(game.type==="url"){
+  area.innerHTML='<iframe id="frame" allow="fullscreen; autoplay; gamepad" style="width:100%;height:65vh;border:0;border-radius:9px" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  document.getElementById("frame").src=game.url;
+ }else{
+  frame.src="about:blank";
+  area.innerHTML='<div id="localGame"></div>';
+  startLocal(game.id);
+ }
+}
+function closeGame(){
+ document.getElementById("player").style.display="none";
+ document.getElementById("frame").src="about:blank";
+ document.getElementById("gameArea").innerHTML='<iframe id="frame" allow="fullscreen; autoplay; gamepad" style="width:100%;height:65vh;border:0"></iframe>';
+}
+function startLocal(id){
+ const box=document.getElementById("localGame");
+ if(id==="tic"){
+  let board=["","","","","","","","",""],turn="X";
+  function draw(){
+   box.innerHTML="<h3>Tic Tac Toe</h3><p>Turn: "+turn+"</p><div style='display:grid;grid-template-columns:repeat(3,65px);justify-content:center'>"+
+   board.map((v,i)=>`<button style="height:60px;font-size:22px" onclick="window.tt(${i})">${v}</button>`).join("")+"</div><button onclick='window.resetTT()'>Restart</button>";
+  }
+  window.tt=i=>{if(!board[i]&&!winner()){board[i]=turn;turn=turn==="X"?"O":"X";draw();if(winner())box.innerHTML+="<h3>"+winner()+" wins!</h3>"}};
+  window.resetTT=()=>{board=["","","","","","","","",""];turn="X";draw()};
+  function winner(){for(let a of [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]])if(board[a[0]]&&board[a[0]]===board[a[1]]&&board[a[1]]===board[a[2]])return board[a[0]];return board.every(Boolean)?"Draw":""}
+  draw();
+ }
+ if(id==="guess"){
+  let answer=Math.floor(Math.random()*100)+1;
+  box.innerHTML="<h3>Number Guess</h3><p>Guess a number from 1 to 100!</p><input id='guessInput' type='number'><button onclick='window.checkGuess()'>Guess</button><p id='guessResult'></p><button onclick='window.newGuess()'>New game</button>";
+  window.checkGuess=()=>{let n=Number(document.getElementById("guessInput").value);document.getElementById("guessResult").textContent=n===answer?"Correct! You got it!":n<answer?"Try higher!":"Try lower!"};
+  window.newGuess=()=>{answer=Math.floor(Math.random()*100)+1;document.getElementById("guessResult").textContent="New number picked!"};
+ }
+ if(id==="memory"){
+  let cards=["🍎","🍌","🍇","🍒","🍎","🍌","🍇","🍒"].sort(()=>Math.random()-.5),opened=[],matched=[];
+  function draw(){box.innerHTML="<h3>Memory Match</h3><p>Find all four pairs!</p><div style='display:grid;grid-template-columns:repeat(4,65px);justify-content:center'>"+cards.map((c,i)=>`<button style='height:60px;font-size:24px' onclick='window.flip(${i})'>${matched.includes(i)||opened.includes(i)?c:"❔"}</button>`).join("")+"</div><p>"+matched.length/2+" of 4 pairs found</p><button onclick='window.newMemory()'>Restart</button>"}
+  window.flip=i=>{if(opened.length<2&&!opened.includes(i)&&!matched.includes(i)){opened.push(i);if(opened.length===2){draw();if(cards[opened[0]]===cards[opened[1]]){matched.push(...opened);opened=[];draw()}else setTimeout(()=>{opened=[];draw()},700)}else draw()}};
+  window.newMemory=()=>{cards.sort(()=>Math.random()-.5);opened=[];matched=[];draw()};
+  draw();
+ }
+ if(id==="snake"){
+  box.innerHTML="<h3>Snake Garden</h3><p>Use the arrow keys to collect food. Avoid the walls and yourself!</p><canvas id='snakeCanvas' width='300' height='300' style='background:#080810;max-width:100%'></canvas><p>Score: <span id='score'>0</span></p><button onclick='window.startSnake()'>Restart</button>";
+  window.startSnake=()=>{
+   clearInterval(window.snakeTimer);
+   const c=document.getElementById("snakeCanvas"),ctx=c.getContext("2d");
+   let s=[{x:7,y:7}],d={x:1,y:0},food={x:12,y:12},score=0;
+   document.onkeydown=e=>{let dirs={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}};let n=dirs[e.key];if(n&&!(n.x===-d.x&&n.y===-d.y))d=n};
+   window.snakeTimer=setInterval(()=>{
+    let h={x:s[0].x+d.x,y:s[0].y+d.y};
+    if(h.x<0||h.x>=15||h.y<0||h.y>=15||s.some(p=>p.x===h.x&&p.y===h.y)){clearInterval(window.snakeTimer);ctx.fillStyle="white";ctx.font="20px Arial";ctx.fillText("Game Over!",90,150);return}
+    s.unshift(h);
+    if(h.x===food.x&&h.y===food.y){score++;document.getElementById("score").textContent=score;food={x:Math.floor(Math.random()*15),y:Math.floor(Math.random()*15)}}else s.pop();
+    ctx.clearRect(0,0,300,300);ctx.fillStyle="#38bdf8";s.forEach(p=>ctx.fillRect(p.x*20,p.y*20,18,18));ctx.fillStyle="#f472b6";ctx.fillRect(food.x*20,food.y*20,18,18);
+   },130);
+  };
+  window.startSnake();
+ }
+}
+render();
+</script>
+</body>
+</html>
